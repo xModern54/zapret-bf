@@ -17,10 +17,7 @@ if "%~1"=="check_updates" (
     exit /b
 )
 
-if "%~1"=="load_game_filter" (
-    call :game_switch_status
-    exit /b
-)
+rem (game filter removed)
 
 
 if "%1"=="admin" (
@@ -37,7 +34,6 @@ setlocal EnableDelayedExpansion
 :menu
 cls
 call :ipset_switch_status
-call :game_switch_status
 
 set "menu_choice=null"
 echo =========  v!LOCAL_VERSION!  =========
@@ -46,20 +42,18 @@ echo 2. Remove Services
 echo 3. Check Status
 echo 4. Run Diagnostics
 echo 5. Check Updates
-echo 6. Switch Game Filter (%GameFilterStatus%)
-echo 7. Switch ipset (%IPsetStatus%)
-echo 8. Update ipset list
+echo 6. Switch ipset (%IPsetStatus%)
+echo 7. Update ipset list
 echo 0. Exit
-set /p menu_choice=Enter choice (0-8): 
+set /p menu_choice=Enter choice (0-7): 
 
 if "%menu_choice%"=="1" goto service_install
 if "%menu_choice%"=="2" goto service_remove
 if "%menu_choice%"=="3" goto service_status
 if "%menu_choice%"=="4" goto service_diagnostics
 if "%menu_choice%"=="5" goto service_check_updates
-if "%menu_choice%"=="6" goto game_switch
-if "%menu_choice%"=="7" goto ipset_switch
-if "%menu_choice%"=="8" goto ipset_update
+if "%menu_choice%"=="6" goto ipset_switch
+if "%menu_choice%"=="7" goto ipset_update
 if "%menu_choice%"=="0" exit /b
 goto menu
 
@@ -162,6 +156,12 @@ chcp 65001 > nul
 cd /d "%~dp0"
 set "BIN_PATH=%~dp0bin\"
 set "LISTS_PATH=%~dp0lists\"
+set "DEBUG_LOG=%~dp0service_install.log"
+(
+  echo === INSTALL START %DATE% %TIME% ===
+  echo CWD: %CD%
+) > "%DEBUG_LOG%"
+rem debug log disabled to avoid interfering with sc commands
 
 :: Searching for .bat files in current folder, except files that start with "service"
 echo Pick one of the options:
@@ -183,9 +183,12 @@ if "!choice!"=="" goto :eof
 set "selectedFile=!file%choice%!"
 if not defined selectedFile (
     echo Invalid choice, exiting...
+    >>"%DEBUG_LOG%" echo ERROR: invalid choice
     pause
     goto menu
 )
+>>"%DEBUG_LOG%" echo Selected: !selectedFile!
+rem Selected file: !selectedFile!
 
 :: Args that should be followed by value
 set "args_with_value=sni host altorder"
@@ -199,6 +202,7 @@ set QUOTE="
 for /f "tokens=*" %%a in ('type "!selectedFile!"') do (
     set "line=%%a"
     call set "line=%%line:^!=EXCL_MARK%%"
+    >>"%DEBUG_LOG%" echo LINE: !line!
 
     echo !line! | findstr /i "%BIN%winws.exe" >nul
     if not errorlevel 1 (
@@ -209,61 +213,12 @@ for /f "tokens=*" %%a in ('type "!selectedFile!"') do (
         if not defined args (
             set "line=!line:*%BIN%winws.exe"=!"
         )
-
-        set "temp_args="
-        for %%i in (!line!) do (
-            set "arg=%%i"
-
-            if not "!arg!"=="^" (
-                if "!arg:~0,2!" EQU "--" if not !mergeargs!==0 (
-                    set "mergeargs=0"
-                )
-
-                if "!arg:~0,1!" EQU "!QUOTE!" (
-                    set "arg=!arg:~1,-1!"
-
-                    echo !arg! | findstr ":" >nul
-                    if !errorlevel!==0 (
-                        set "arg=\!QUOTE!!arg!\!QUOTE!"
-                    ) else if "!arg:~0,1!"=="@" (
-                        set "arg=\!QUOTE!@%~dp0!arg:~1!\!QUOTE!"
-                    ) else if "!arg:~0,5!"=="%%BIN%%" (
-                        set "arg=\!QUOTE!!BIN_PATH!!arg:~5!\!QUOTE!"
-                    ) else if "!arg:~0,7!"=="%%LISTS%%" (
-                        set "arg=\!QUOTE!!LISTS_PATH!!arg:~7!\!QUOTE!"
-                    ) else (
-                        set "arg=\!QUOTE!%~dp0!arg!\!QUOTE!"
-                    )
-                ) else if "!arg:~0,12!" EQU "%%GameFilter%%" (
-                    set "arg=%GameFilter%"
-                )
-
-                if !mergeargs!==1 (
-                    set "temp_args=!temp_args!,!arg!"
-                ) else if !mergeargs!==3 (
-                    set "temp_args=!temp_args!=!arg!"
-                    set "mergeargs=1"
-                ) else (
-                    set "temp_args=!temp_args! !arg!"
-                )
-
-                if "!arg:~0,2!" EQU "--" (
-                    set "mergeargs=2"
-                ) else if !mergeargs! GEQ 1 (
-                    if !mergeargs!==2 set "mergeargs=1"
-
-                    for %%x in (!args_with_value!) do (
-                        if /i "%%x"=="!arg!" (
-                            set "mergeargs=3"
-                        )
-                    )
-                )
-            )
-        )
-
-        if not "!temp_args!"=="" (
-            set "args=!args! !temp_args!"
-        )
+        rem Normalize and collect only option lines
+        set "line=!line:^=!"
+        set "line=!line:%%BIN%%=%BIN_PATH%!"
+        set "line=!line:%%LISTS%%=%LISTS_PATH%!"
+        for /f "tokens=* delims= " %%s in ("!line!") do set "line=%%s"
+        if defined line if /i "!line:~0,2!"=="--" set "args=!args! !line!"
     )
 )
 
@@ -273,17 +228,22 @@ call :tcp_enable
 set ARGS=%args%
 call set "ARGS=%%ARGS:EXCL_MARK=^!%%"
 echo Final args: !ARGS!
+>>"%DEBUG_LOG%" echo ARGS: !ARGS!
 set SRVCNAME=zapret
 
 net stop %SRVCNAME% >nul 2>&1
 sc delete %SRVCNAME% >nul 2>&1
 sc create %SRVCNAME% binPath= "\"%BIN_PATH%winws.exe\" !ARGS!" DisplayName= "zapret" start= auto
+>>"%DEBUG_LOG%" echo sc create rc=!errorlevel!
 sc description %SRVCNAME% "Zapret DPI bypass software"
 sc start %SRVCNAME%
+>>"%DEBUG_LOG%" echo sc start rc=!errorlevel!
 for %%F in ("!file%choice%!") do (
     set "filename=%%~nF"
 )
 reg add "HKLM\System\CurrentControlSet\Services\zapret" /v zapret-discord-youtube /t REG_SZ /d "!filename!" /f
+>>"%DEBUG_LOG%" echo Wrote registry tag: !filename!
+>>"%DEBUG_LOG%" echo === INSTALL END %DATE% %TIME% ===
 
 pause
 goto menu
@@ -615,37 +575,7 @@ goto menu
 
 
 :: GAME SWITCH ========================
-:game_switch_status
-chcp 437 > nul
-
-set "gameFlagFile=%~dp0bin\game_filter.enabled"
-
-if exist "%gameFlagFile%" (
-    set "GameFilterStatus=enabled"
-    set "GameFilter=1024-65535"
-) else (
-    set "GameFilterStatus=disabled"
-    set "GameFilter=12"
-)
-exit /b
-
-
-:game_switch
-chcp 437 > nul
-cls
-
-if not exist "%gameFlagFile%" (
-    echo Enabling game filter...
-    echo ENABLED > "%gameFlagFile%"
-    call :PrintYellow "Restart the zapret to apply the changes"
-) else (
-    echo Disabling game filter...
-    del /f /q "%gameFlagFile%"
-    call :PrintYellow "Restart the zapret to apply the changes"
-)
-
-pause
-goto menu
+rem (game switch removed)
 
 
 :: IPSET SWITCH =======================
