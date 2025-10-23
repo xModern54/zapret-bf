@@ -41,7 +41,7 @@ if not "!BFPORTS:-=!"=="!BFPORTS!" (
 if not defined START_PORT set "START_PORT=65530"
 if not defined END_PORT set "END_PORT=65535"
 
-echo outbound and ((tcp and (tcp.DstPort == 80 or tcp.DstPort == 443 or tcp.DstPort == 2053 or tcp.DstPort == 2083 or tcp.DstPort == 2087 or tcp.DstPort == 2096 or tcp.DstPort == 8443)) or (udp and (udp.DstPort^>^=19294 and udp.DstPort^<^=19344 or udp.DstPort^>^=50000 and udp.DstPort^<^=50100 or (udp.SrcPort^>^=!START_PORT! and udp.SrcPort^<^=!END_PORT!) or udp.DstPort == 443)))>"%WF_TMP%"
+echo outbound and ((tcp and (tcp.DstPort == 80 or tcp.DstPort == 443 or tcp.DstPort == 2053 or tcp.DstPort == 2083 or tcp.DstPort == 2087 or tcp.DstPort == 2096 or tcp.DstPort == 8443)) or (udp and (udp.DstPort^>^=19294 and udp.DstPort^<^=19344 or udp.DstPort^>^=50000 and udp.DstPort^<^=50100 or (udp.DstPort^>^=3478 and udp.DstPort^<^=3481) or udp.DstPort == 3659 or (udp.SrcPort^>^=!START_PORT! and udp.SrcPort^<^=!END_PORT!) or udp.DstPort == 443)))>"%WF_TMP%"
 
 start "zapret: %~n0" /min "%BIN%winws.exe" --wf-raw=@"%WF_TMP%" ^
 --filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun --dpi-desync=fake --dpi-desync-repeats=6 --new ^
