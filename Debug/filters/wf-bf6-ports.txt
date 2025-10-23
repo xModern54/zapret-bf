@@ -1,0 +1,16 @@
+outbound and (
+  (tcp and (
+     tcp.DstPort == 443 or
+     tcp.DstPort == 80 or
+     tcp.DstPort == 8095 or
+     tcp.DstPort == 9000 or
+     tcp.DstPort == 10010 or
+     tcp.DstPort == 15013
+  )) or
+  (udp and (
+     udp.SrcPort == 54356 or udp.SrcPort == 54357 or udp.SrcPort == 54359 or udp.SrcPort == 54360 or
+     udp.SrcPort == 54367 or udp.SrcPort == 54369 or udp.SrcPort == 54373 or udp.SrcPort == 54378 or
+     udp.SrcPort == 55528 or udp.SrcPort == 52833 or udp.SrcPort == 58360 or udp.SrcPort == 60050 or
+     udp.SrcPort == 60518 or udp.SrcPort == 65370 or udp.SrcPort == 65535
+  ))
+)

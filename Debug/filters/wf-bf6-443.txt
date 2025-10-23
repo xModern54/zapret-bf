@@ -1,0 +1,1 @@
+outbound and ( (tcp and tcp.DstPort == 443) or (udp and udp.DstPort == 443) )

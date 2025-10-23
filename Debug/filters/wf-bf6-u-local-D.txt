@@ -1,0 +1,6 @@
+outbound and udp and (
+  udp.SrcPort == 64682 or
+  udp.SrcPort == 65108 or
+  udp.SrcPort == 65370 or
+  udp.SrcPort == 65535
+)

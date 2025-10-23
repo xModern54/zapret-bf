@@ -1,0 +1,1 @@
+outbound and udp and (udp.SrcPort >= 49152 and udp.SrcPort <= 65535)

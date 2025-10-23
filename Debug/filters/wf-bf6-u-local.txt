@@ -1,0 +1,12 @@
+outbound and udp and (
+  (udp.SrcPort >= 54356 and udp.SrcPort <= 54380) or
+  (udp.SrcPort >= 60517 and udp.SrcPort <= 60518) or
+  udp.SrcPort == 52833 or
+  udp.SrcPort == 55528 or
+  udp.SrcPort == 58360 or
+  udp.SrcPort == 60050 or
+  udp.SrcPort == 64682 or
+  udp.SrcPort == 65108 or
+  udp.SrcPort == 65370 or
+  udp.SrcPort == 65535
+)

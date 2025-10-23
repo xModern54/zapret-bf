@@ -1,0 +1,3 @@
+outbound and udp and (
+  (udp.SrcPort >= 60517 and udp.SrcPort <= 60518)
+)

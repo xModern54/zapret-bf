@@ -1,0 +1,17 @@
+outbound and (
+  (tcp and (
+    tcp.DstPort == 443 or
+    tcp.DstPort == 80 or
+    tcp.DstPort == 8095 or
+    tcp.DstPort == 9000 or
+    tcp.DstPort == 10010 or
+    tcp.DstPort == 15013 or
+    tcp.DstPort == 2053 or
+    tcp.DstPort == 2083 or
+    tcp.DstPort == 2087 or
+    tcp.DstPort == 2096 or
+    tcp.DstPort == 8443
+  )) or
+  (udp and udp.DstPort == 443) or
+  (udp and (udp.DstPort >= 3478 and udp.DstPort <= 3481))
+)

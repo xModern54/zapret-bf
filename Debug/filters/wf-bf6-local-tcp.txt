@@ -1,0 +1,12 @@
+outbound and tcp and (
+  tcp.SrcPort == 49996 or
+  tcp.SrcPort == 50022 or
+  (tcp.SrcPort >= 50030 and tcp.SrcPort <= 50034) or
+  tcp.SrcPort == 50045 or
+  tcp.SrcPort == 50049 or
+  tcp.SrcPort == 50062 or
+  tcp.SrcPort == 50068 or
+  (tcp.SrcPort >= 50072 and tcp.SrcPort <= 50083) or
+  (tcp.SrcPort >= 50089 and tcp.SrcPort <= 50093) or
+  (tcp.SrcPort >= 50095 and tcp.SrcPort <= 50107)
+)
